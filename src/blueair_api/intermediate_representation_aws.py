@@ -170,11 +170,11 @@ class SensorPack(list[Record]):
         for record in stream:
             rs = None
             rt = None
-            rn : str
+            rn = None
             ru = None
-            rv : float | bool | str | bytes
+            rv : float | bool | str | bytes | None = None
+            has_value = False
             for label, value in record.items():
-                assert isinstance(value, str | int | float | bool)
                 match label:
                     case 'bn' | 'bt' | 'bu' | 'bv' | 'bs' | 'bver':
                         raise ValueError("TODO: base fields not supported. c.f. RFC8428, 4.1")
@@ -184,17 +184,26 @@ class SensorPack(list[Record]):
                         rs = float(value)
                     case 'v':
                         rv = float(value)
+                        has_value = True
                     case 'vb':
                         rv = bool(value)
+                        has_value = True
                     case 'vs':
                         rv = str(value)
+                        has_value = True
                     case 'vd':
                         rv = bytes(base64.b64decode(str(value)))
+                        has_value = True
                     case 'n':
                         rn = str(value)
                     case 'u':
                         ru = str(value)
-            seq.append(Record(name=rn, unit=ru, value=rv, integral=rs, timestamp=rt))
+                    case _:
+                        # Ignore non-SenML and vendor-specific fields (e.g. "vj").
+                        continue
+            if rn is None or not has_value:
+                continue
+            seq.append(Record(name=rn, unit=ru, value=typing.cast(float | bool | str | bytes, rv), integral=rs, timestamp=rt))
         super().__init__(seq)
 
     def to_latest_value(self) -> dict[str, str | bool | float | bytes]:

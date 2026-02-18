@@ -340,6 +340,20 @@ class DeviceAwsSetterTest(DeviceAwsTestBase):
         await self.device.refresh()
         assert self.device.fan_speed_0 == 2
 
+    async def test_light_on(self):
+        await self.device.set_light_on(77)
+        assert self.device.brightness == 77
+
+        await self.device.refresh()
+        assert self.device.brightness == 77
+
+    async def test_light_off(self):
+        await self.device.set_light_off()
+        assert self.device.brightness == 0
+
+        await self.device.refresh()
+        assert self.device.brightness == 0
+
 
 class EmptyDeviceAwsTest(DeviceAwsTestBase):
     """Tests for a emptydevice.
@@ -450,7 +464,7 @@ class H35iTest(DeviceAwsTestBase):
             assert device.heat_fan_speed is NotImplemented
             assert device.cool_sub_mode is NotImplemented
             assert device.cool_fan_speed is NotImplemented
-            assert device.fan_speed_0 is None
+            assert device.fan_speed_0 is NotImplemented
             assert device.temperature_unit is NotImplemented
             assert device.mood_brightness is NotImplemented
             assert device.water_refresher_usage_percentage is NotImplemented
@@ -508,7 +522,7 @@ class H38iTest(DeviceAwsTestBase):
             assert device.heat_fan_speed is NotImplemented
             assert device.cool_sub_mode is NotImplemented
             assert device.cool_fan_speed is NotImplemented
-            assert device.fan_speed_0 is None
+            assert device.fan_speed_0 is NotImplemented
             assert device.temperature_unit is NotImplemented
             assert device.mood_brightness == 0
             assert device.water_refresher_usage_percentage == 0
@@ -862,3 +876,93 @@ class PetAirProTest(DeviceAwsTestBase):
             assert device.mood_brightness is NotImplemented
             assert device.water_refresher_usage_percentage is NotImplemented
             assert device.water_level is NotImplemented
+
+
+class MiniRestfulTest(DeviceAwsTestBase):
+    """Tests for Mini Restful."""
+
+    def setUp(self):
+        super().setUp()
+        self.device_info_helper.info.update({
+            "configuration": {
+                "di": {
+                    "name": "Mini Restful",
+                    "cfv": "1.0.1",
+                    "mfv": "1.2.9",
+                    "ds": "111383600201111210004207",
+                    "sku": "113836",
+                },
+                "ds": {},
+                "dc": {
+                    "cfv": {"n": "cfv", "v": 0},
+                    "fanspeed": {"n": "fanspeed", "v": 11},
+                    "ofv": {"n": "ofv", "v": 0},
+                },
+                "da": {},
+            },
+            "states": [
+                {"n": "mainmode", "v": 0, "t": 1771206986},
+                {"n": "alarm1", "vj": {"n": "Alarm"}, "t": 1771206986},
+                {"n": "alarm6", "vj": "null", "t": 1771206986},
+                {"n": "standby", "vb": False, "t": 1771206986},
+                {"n": "fanspeed", "v": 0, "t": 1771326084},
+                {"n": "apsubmode", "v": 1, "t": 1771206987},
+                {"n": "childlock", "vb": False, "t": 1771206987},
+                {"n": "brightness", "v": 10, "t": 1771206987},
+                {"n": "filterusage", "v": 26, "t": 1771332086},
+                {"t": 1771206990, "vb": True, "n": "online"},
+            ],
+        })
+
+    async def test_attributes(self):
+
+        await self.device.refresh()
+        self.api.device_info.assert_awaited_with("fake-name-api", "fake-uuid")
+
+        with assert_fully_checked(self.device) as device:
+            assert device.model == ModelEnum.MINI_RESTFUL
+
+            assert device.pm1 is NotImplemented
+            assert device.pm2_5 is NotImplemented
+            assert device.pm10 is NotImplemented
+            assert device.total_voc is NotImplemented
+            assert device.voc is NotImplemented
+            assert device.temperature is NotImplemented
+            assert device.humidity is NotImplemented
+            assert device.name == "Mini Restful"
+            assert device.firmware == "1.0.1"
+            assert device.mcu_firmware == "1.2.9"
+            assert device.serial_number == "111383600201111210004207"
+            assert device.sku == "113836"
+
+            assert device.standby is False
+            assert device.night_mode is NotImplemented
+            assert device.germ_shield is NotImplemented
+            assert device.brightness == 10
+            assert device.child_lock is False
+            assert device.fan_speed == 0
+            assert device.fan_auto_mode is NotImplemented
+            assert device.filter_usage_percentage == 26
+            assert device.wifi_working is True
+            assert device.wick_usage_percentage is NotImplemented
+            assert device.auto_regulated_humidity is NotImplemented
+            assert device.water_shortage is NotImplemented
+            assert device.wick_dry_mode is NotImplemented
+            assert device.main_mode == 0
+            assert device.heat_temp is NotImplemented
+            assert device.heat_sub_mode is NotImplemented
+            assert device.heat_fan_speed is NotImplemented
+            assert device.cool_sub_mode is NotImplemented
+            assert device.cool_fan_speed is NotImplemented
+            assert device.ap_sub_mode == 1
+            assert device.fan_speed_0 is NotImplemented
+            assert device.temperature_unit is NotImplemented
+            assert device.mood_brightness is NotImplemented
+            assert device.water_refresher_usage_percentage is NotImplemented
+            assert device.water_level is NotImplemented
+
+    async def test_set_mood_brightness_uses_nlstepless(self):
+        await self.device.refresh()
+        await self.device.set_mood_brightness(12)
+        await self.device.refresh()
+        assert self.device.mood_brightness == 12

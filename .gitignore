@@ -6,3 +6,5 @@ venv/
 dist/
 src/blueair_api.egg-info/
 build/
+.env
+scripts

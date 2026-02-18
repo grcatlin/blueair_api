@@ -150,6 +150,16 @@ class SensorPackTest(TestCase):
     latest = sp.to_latest()
     assert latest['missing_t'].value == 2
 
+  def testIgnoresUnsupportedRecords(self):
+    sp = ir.SensorPack([
+            {'n': 'alarm1', 'vj': {'nested': True}, 't': 1},
+            {'n': 'alarm6', 'vj': 'null', 't': 2},
+            {'n': 'online', 'vb': True, 't': 3},
+    ])
+
+    latest = sp.to_latest_value()
+    assert latest == {'online': True}
+
 
 class QueryJsonTest(TestCase):
 
@@ -191,4 +201,3 @@ class ParseJsonTest(TestCase):
                 "one" : FakeObjectType(a="1", extra_fields={"e":1}),
                 "two" : FakeObjectType(a="2", extra_fields={"e":2}),
             }
-

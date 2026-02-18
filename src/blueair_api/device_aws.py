@@ -145,6 +145,8 @@ class DeviceAws(CallbacksMixin):
         states = ir.SensorPack(self.raw_info["states"]).to_latest_value()
 
         def states_safe_get(key):
+            if key in states:
+                return states.get(key)
             return states.get(key) if key in dc else NotImplemented
 
         # "online" is not defined in the schema.
@@ -155,6 +157,8 @@ class DeviceAws(CallbacksMixin):
         self.germ_shield = states_safe_get("germshield")
         self.brightness = states_safe_get("brightness")
         self.mood_brightness = states_safe_get("nlbrightness")
+        if self.mood_brightness is NotImplemented and "nlstepless" in states:
+            self.mood_brightness = states.get("nlstepless")
         self.child_lock = states_safe_get("childlock")
         self.water_level = states_safe_get("wlevel")
         self.fan_speed = states_safe_get("fanspeed")
@@ -197,8 +201,29 @@ class DeviceAws(CallbacksMixin):
 
     async def set_mood_brightness(self, value: int):
         self.mood_brightness = value
-        await self.api.set_device_info(self.uuid, "nlbrightness", "v", value)
+        service_name = "nlbrightness"
+        if self.model == ModelEnum.MINI_RESTFUL:
+            service_name = "nlstepless"
+        await self.api.set_device_info(self.uuid, service_name, "v", value)
         self.publish_updates()
+
+    async def set_light(self, is_on: bool, on_brightness: int | None = None):
+        if is_on:
+            if self.model == ModelEnum.MINI_RESTFUL:
+                await self.set_mood_brightness(20 if on_brightness is None else on_brightness)
+            else:
+                await self.set_brightness(100 if on_brightness is None else on_brightness)
+        else:
+            if self.model == ModelEnum.MINI_RESTFUL:
+                await self.set_mood_brightness(0)
+            else:
+                await self.set_brightness(0)
+
+    async def set_light_on(self, brightness: int | None = None):
+        await self.set_light(is_on=True, on_brightness=brightness)
+
+    async def set_light_off(self):
+        await self.set_light(is_on=False)
 
     @property
     def fan_speed_count(self) -> int:
@@ -337,6 +362,8 @@ class DeviceAws(CallbacksMixin):
             return ModelEnum.BLUE_SIGNATURE
         if self.sku == "112793":
             return ModelEnum.PET_AIR_PRO
+        if self.sku == "113836":
+            return ModelEnum.MINI_RESTFUL
         if self.sku == "110178":
             return ModelEnum.MAX_3250I
         if self.sku == "111905":

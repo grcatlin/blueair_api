@@ -19,3 +19,4 @@ class ModelEnum(StrEnum):
     T10I = "T10i ComfortPure 3-in-1 Filter/Heater/Fan"
     BLUE_SIGNATURE = "Blue Signature"
     PET_AIR_PRO = "PetAir Pro"
+    MINI_RESTFUL = "Mini Restful"
