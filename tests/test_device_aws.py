@@ -966,3 +966,19 @@ class MiniRestfulTest(DeviceAwsTestBase):
         await self.device.set_mood_brightness(12)
         await self.device.refresh()
         assert self.device.mood_brightness == 12
+
+    async def test_set_mood_light_brightness_default_and_range(self):
+        await self.device.refresh()
+
+        await self.device.set_mood_light_brightness()
+        await self.device.refresh()
+        assert self.device.mood_brightness == 0
+
+        await self.device.set_mood_light_brightness(100)
+        await self.device.refresh()
+        assert self.device.mood_brightness == 100
+
+        with pytest.raises(ValueError):
+            await self.device.set_mood_light_brightness(-1)
+        with pytest.raises(ValueError):
+            await self.device.set_mood_light_brightness(101)

@@ -207,6 +207,11 @@ class DeviceAws(CallbacksMixin):
         await self.api.set_device_info(self.uuid, service_name, "v", value)
         self.publish_updates()
 
+    async def set_mood_light_brightness(self, value: int = 0):
+        if value < 0 or value > 100:
+            raise ValueError("mood brightness must be between 0 and 100")
+        await self.set_mood_brightness(value)
+
     async def set_light(self, is_on: bool, on_brightness: int | None = None):
         if is_on:
             if self.model == ModelEnum.MINI_RESTFUL:
